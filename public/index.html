@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Chess.io</title>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chess.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/js/chessboard-1.0.0.min.js"></script>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/css/chessboard-1.0.0.min.css">
+
+<style>
+body {
+  background: #312e2b;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
+#board {
+  width: 500px;
+  margin: auto;
+}
+button { padding: 10px; margin: 5px; }
+</style>
+</head>
+
+<body>
+
+<h1>Chess.io</h1>
+
+<button onclick="createRoom()">Créer un salon</button>
+<input id="code" placeholder="Code">
+<button onclick="joinRoom()">Rejoindre</button>
+
+<p id="roomCode"></p>
+
+<div id="board"></div>
+
+<script>
+const socket = io();
+let roomCode = null;
+
+const board = Chessboard('board', {
+  draggable: true,
+  position: 'start',
+  onDrop: (source, target) => {
+    if (!roomCode) return;
+
+    const move = { from: source, to: target, promotion: "q" };
+    socket.emit("move", { code: roomCode, move });
+  }
+});
+
+socket.on("move", move => {
+  board.move(move.from + "-" + move.to);
+});
+
+function createRoom() {
+  socket.emit("createRoom");
+}
+
+function joinRoom() {
+  const code = document.getElementById("code").value;
+  socket.emit("joinRoom", code);
+  roomCode = code;
+}
+
+socket.on("roomCreated", code => {
+  roomCode = code;
+  document.getElementById("roomCode").innerText =
+    "Code du salon : " + code;
+});
+
+socket.on("startGame", () => {
+  alert("Partie commencée !");
+});
+</script>
+
+</body>
+</html>
